@@ -40,8 +40,8 @@ delete_existing_rules = ->
     .then ->
       console.log "Deleted rule '#{rule.id}'"
 
-block_bad_countries = ->
-  Promise.map R.difference(R.pluck('alpha2', countries.all), COUNTRIES_ALLOWED), (c) ->
+block_countries = (countries) ->
+  Promise.map countries, (c) ->
     cf.userFirewallAccessRuleNew
       mode: 'challenge'
       configuration:
@@ -50,6 +50,9 @@ block_bad_countries = ->
     .then ->
       console.log "#{c}: Rule created!"
     .catch ->
+
+block_bad_countries = ->
+  block_countries R.difference(R.pluck('alpha2', countries.all), COUNTRIES_ALLOWED)
 
 whitelist_ips = (ips, comment) ->
   Promise.map ips, (i) ->
