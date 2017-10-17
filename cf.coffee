@@ -10,13 +10,13 @@ dns = Promise.promisifyAll require("dns")
 cf = new CloudFlareAPI
   email: 'YOUR_MAIL'
   key:   'YOUR_KEY'
+  autoPagination: true
+  autoPaginationConcurrency: 4
 
 COUNTRIES_ALLOWED = [
   'DE'
   'AT'
   'CH'
-  'BE'
-  'NO'
 ]
 
 airvpn_exit_ips_country = (code) ->
@@ -34,11 +34,18 @@ airvpn_exit_ips_servers = (names) ->
   .then _.compact
 
 delete_existing_rules = ->
-  cf.userFirewallAccessRuleGetAll {auto_pagination: true, auto_pagination_concurrency: 4}
+  cf.userFirewallAccessRuleGetAll
   .map (rule) ->
     cf.userFirewallAccessRuleDestroy rule.id
     .then ->
       console.log "Deleted rule '#{rule.id}'"
+
+delete_country_blocks = ->
+  cf.userFirewallAccessRuleGetAll configuration_target: 'country'
+  .map (rule) ->
+    cf.userFirewallAccessRuleDestroy rule.id
+    .then ->
+      console.log "Deleted rule '#{rule.id}', Country '#{rule.configuration.value}'"
 
 block_countries = (countries) ->
   Promise.map countries, (c) ->
