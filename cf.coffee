@@ -1,5 +1,6 @@
 #!/usr/bin/env coffee
 _             = require 'lodash'
+R             = require 'ramda'
 ip            = require 'ip'
 Promise       = require "bluebird"
 CloudFlareAPI = require 'cloudflare4'
@@ -20,17 +21,13 @@ COUNTRIES_ALLOWED = [
 
 airvpn_exit_ips_country = (code) ->
   dns.resolveAsync "#{_.toLower code}.all.vpn.airdns.org"
-  .then (res) ->
-    _.map res, (entry) ->
-      ip.fromLong ip.toLong(entry)+1
+  .then R.map (e) -> ip.fromLong ip.toLong(e)+1
 
 airvpn_exit_ips_servers = (names) ->
   Promise.map names, (name) ->
     dns.resolveAsync "#{name}.airservers.org"
     .then (res) ->
-      res = _.map res, (entry) ->
-        ip.fromLong ip.toLong(entry)+1
-      {name: name, res: res}
+      {name: name, res: res.map (e) -> ip.fromLong ip.toLong(e)+1}
     .catch ->
       console.error "Error trying to resolve server '#{name}'"
       null
@@ -44,10 +41,7 @@ delete_existing_rules = ->
       console.log "Deleted rule '#{rule.id}'"
 
 block_bad_countries = ->
-  bad_countries = _.map countries.all, (c) -> c.alpha2
-  _.pullAll bad_countries, COUNTRIES_ALLOWED
-
-  Promise.map bad_countries, (c) ->
+  Promise.map R.difference(R.pluck('alpha2', countries.all), COUNTRIES_ALLOWED), (c) ->
     cf.userFirewallAccessRuleNew
       mode: 'challenge'
       configuration:
