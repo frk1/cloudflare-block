@@ -34,7 +34,7 @@ airvpn_exit_ips_servers = (names) ->
   .then _.compact
 
 delete_existing_rules = ->
-  cf.userFirewallAccessRuleGetAll
+  cf.userFirewallAccessRuleGetAll()
   .map (rule) ->
     cf.userFirewallAccessRuleDestroy rule.id
     .then ->
